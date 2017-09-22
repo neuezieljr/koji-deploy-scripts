@@ -1,19 +1,17 @@
-#!/bin/sh -
-set -x
+#!/bin/bash -
+set -euo pipefail
 
 SERVER=koji-master.local
 cd /etc/pki/koji
 
 #if you change your certificate authority name to something else you will need to change the caname value to reflect the change.
 caname="koji"
-host="koji-master.local"
 
 ## user is equal to parameter one or the first argument when you actually run the script
 user=$1
 kind=$2
 password=$1
 conf=confs/${user}-ssl.cnf
-psql="su - koji -c \"psql koji koji\""
 
 if [ "x$kind" == "xbuilder" ]; then
     echo "Add Builder $user"
@@ -34,11 +32,10 @@ fi
 #generate user private key
 openssl genrsa -out private/${user}.key 2048
 
-#openssl genrsa -out private/${user}.key 2048
 cp koji-ssl.cnf $conf
 
 openssl req -config $conf -new -nodes -out certs/${user}.csr -key private/${user}.key \
-        -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=${user}/emailAddress=${user}@${host}"
+        -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=${user}/emailAddress=${user}@${SERVER}"
 
 openssl ca -config $conf -batch -keyfile private/${caname}_ca_cert.key -cert ${caname}_ca_cert.crt \
         -out certs/${user}-crtonly.crt -outdir certs -infiles certs/${user}.csr
