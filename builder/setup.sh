@@ -3,65 +3,34 @@ set -euo pipefail
 
 install_package()
 {
-    dnf install mock \
-                rpm-build \
-                createrepo \
-                koji-builder
+    $INSTALLER install -y mock \
+                          rpm-build \
+                          createrepo \
+                          koji-builder
 }
 
-setup_config()
+setup_builder_config()
 {
-    mv /etc/kojid.conf /etc/kojid.conf.prev
-    cat /etc/kojid.conf.prev | \
-        sed -e '/^;/d' -e '/^$/d' |\
-        sed -e '/server=/d' | \
-        sed -e '/user=/d' | \
-        sed -e '/topurl=/d' | \
-        sed -e '/workdir=/d' | \
-        sed -e '/topdir=/d' | \
-        sed -e '/cert=/d' | \
-        sed -e '/ca=/d' | \
-        sed -e '/serverca=/d' > /etc/kojid.conf
-
-    cat <<EOF >> /etc/kojid.conf
-; The URL for the xmlrpc server
-server=http://koji-hub/kojihub
-
-; the username has to be the same as what you used with add-host
-; in this example follow as below
-user = kojibuilder
-
-; The URL for the file access
-topurl=http://koji-hub/kojifiles
-
-; The directory root for temporary storage
-workdir=/tmp/koji
-
-; The directory root where work data can be found from the koji hub
-topdir=/mnt/koji
-
-;client certificate
-; This should reference the builder certificate we created on the kojihub CA, for kojibuilder
-; ALSO NOTE: This is the PEM file, NOT the crt
-cert = /etc/kojid/kojibuilder.crt
-
-;certificate of the CA that issued the client certificate
-ca = /etc/kojid/koji_client_ca_cert.crt
-
-;certificate of the CA that issued the HTTP server certificate
-serverca = /etc/kojid/koji_server_ca_cert.crt
-EOF
-
+    mkdir -p /etc/kojid/backup
+    mv /etc/kojid/kojid.conf /etc/kojid/backup/kojid.conf
+    sed -e 's,#KOJI_HUB_NAME#,'${KOJI_HUB_NAME}',g' \
+        -e 's,#KOJI_DIR#,'${KOJI_DIR}',g' \
+	-e 's,#KOJI_BUILDER_CA#,'/etc/kojid/${KOJI_BUILDER_CA}',g' \
+	-e 's,#KOJI_SERVER_CA#,'/etc/kojid/${KOJI_SERVER_CA}',g' \
+	$KOJI_SETUP_BUILDER_DIR/kojid.conf > /etc/kojid/kojid.conf
 }
 
 retrieve_cert_file()
 {
-    SERVER=koji-master.local
-    scp $SERVER:/opt/koji-client/kojibuilder/client.crt /etc/kojid/kojibuilder.crt
-    scp $SERVER:/opt/koji-client/kojibuilder/clientca.crt /etc/kojid/koji_client_ca_cert.crt
-    scp $SERVER:/opt/koji-client/kojibuilder/serverca.crt /etc/kojid/koji_server_ca_cert.crt
+    cp /opt/koji-clients/kojibuilder/client.crt /etc/kojid/${KOJI_BUILDER_CA}
+    cp /opt/koji-clients/kojibuilder/serverca.crt /etc/kojid/${KOJI_SERVER_CA}
 }
 
-install_package
-setup_config
-retrieve_cert_file
+! rpm -qa | grep -q koji-builder && \
+    install_package
+
+if [ ! -f /etc/kojid/backup/kojid.conf ]; then
+    setup_builder_config
+    retrieve_cert_file
+    systemctl restart kojid
+fi
