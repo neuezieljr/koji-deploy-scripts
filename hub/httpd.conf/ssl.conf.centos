@@ -1,41 +1,50 @@
+#
+# When we also provide SSL we have to listen to the 
+# the HTTPS port in addition.
+#
 Listen 443 https
+
 SSLPassPhraseDialog exec:/usr/libexec/httpd-ssl-pass-dialog
+
 SSLSessionCache         shmcb:/run/httpd/sslcache(512000)
 SSLSessionCacheTimeout  300
 SSLRandomSeed startup file:/dev/urandom  256
 SSLRandomSeed connect builtin
 SSLCryptoDevice builtin
 
+##
+## SSL Virtual Host Context
+##
+
 <VirtualHost _default_:443>
-    ServerName #SERVER_NAME#:443
+
+    ServerName #KOJI_HUN_NAME#:443
     ErrorLog logs/ssl_error_log
     TransferLog logs/ssl_access_log
     LogLevel warn
     SSLEngine on
-    SSLProtocol all -SSLv3
-    SSLProxyProtocol all -SSLv3
-    SSLHonorCipherOrder on
-    SSLCipherSuite PROFILE=SYSTEM
-    SSLProxyCipherSuite PROFILE=SYSTEM
+    SSLProtocol all -SSLv2
+    SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!SEED:!IDEA
 
     SSLCertificateFile #KOJI_HUB_CRT#
     SSLCertificateKeyFile #KOJI_HUB_KEY#
     SSLCertificateChainFile #KOJI_CA_CERT#
     SSLCACertificateFile #KOJI_CA_CERT#
-    SSLVerifyDepth 1
+    SSLVerifyDepth  10
 
-   <FilesMatch "\.(cgi|shtml|phtml|php)$">
-       SSLOptions +StdEnvVars
-   </FilesMatch>
+    <Files ~ "\.(cgi|shtml|phtml|php3?)$">
+        SSLOptions +StdEnvVars
+    </Files>
+    <Directory "/var/www/cgi-bin">
+        SSLOptions +StdEnvVars
+    </Directory>
 
-   <Directory "/var/www/cgi-bin">
-       SSLOptions +StdEnvVars
-   </Directory>
-
-   BrowserMatch "MSIE [2-5]" \
+    BrowserMatch "MSIE [2-5]" \
          nokeepalive ssl-unclean-shutdown \
          downgrade-1.0 force-response-1.0
 
-   CustomLog logs/ssl_request_log \
+    CustomLog logs/ssl_request_log \
           "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
-</VirtualHost>
+
+</VirtualHost>                                  
+

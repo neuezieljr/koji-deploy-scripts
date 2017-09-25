@@ -1,7 +1,6 @@
 #!/bin/bash -
 set -euo pipefail
 
-SERVER=koji-master.local
 cd /etc/pki/koji
 
 #if you change your certificate authority name to something else you will need to change the caname value to reflect the change.
@@ -10,10 +9,10 @@ caname="koji"
 ## user is equal to parameter one or the first argument when you actually run the script
 user=$1
 kind=$2
-password=$1
+password=$user
 conf=confs/${user}-ssl.cnf
 
-if [ "x$kind" == "xbuilder" ]; then
+if [ "x$kind" == "xBuilder" ]; then
     echo "Add Builder $user"
     echo "INSERT INTO users (name, status, usertype) VALUES ('${user}', 0, 1);" | su - koji -c "psql koji koji"
     echo "INSERT INTO host (id, user_id, name, arches) SELECT nextval('host_id_seq'), users.id, '${user}', 'x86_64' FROM users WHERE name = '${user}';" | su - koji -c "psql koji koji"
@@ -35,7 +34,7 @@ openssl genrsa -out private/${user}.key 2048
 cp koji-ssl.cnf $conf
 
 openssl req -config $conf -new -nodes -out certs/${user}.csr -key private/${user}.key \
-        -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=${user}/emailAddress=${user}@${SERVER}"
+        -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=${user}/emailAddress=${user}@${KOJI_HUB_NAME}"
 
 openssl ca -config $conf -batch -keyfile private/${caname}_ca_cert.key -cert ${caname}_ca_cert.crt \
         -out certs/${user}-crtonly.crt -outdir certs -infiles certs/${user}.csr
@@ -62,22 +61,22 @@ cp /etc/pki/koji/koji_ca_cert.crt $client/serverca.crt
 
 cat <<EOF > $client/config
 [koji]
-server = https://${SERVER}/kojihub
+server = https://${KOJI_HUB_NAME}/kojihub
 authtype = ssl
 cert = ${client}/client.crt
 ca = ${client}/clientca.crt
 serverca = ${client}/serverca.crt
-weburl = https://${SERVER}/koji
-topurl = https://${SERVER}/kojifiles
+weburl = https://${KOJI_HUB_NAME}/koji
+topurl = https://${KOJI_HUB_NAME}/kojifiles
 EOF
 
 cat <<EOF > $client/config.json
 {
-	"url": "https://${SERVER}/kojihub",
-	"crt-url": "https://${SERVER}/koji-clients/${user}/client.crt",
-	"pem-url": "https://${SERVER}/koji-clients/${user}/client.pem",
-	"ca-url": "https://${SERVER}/koji-clients/${user}/clientca.crt",
-	"serverca-url": "https://${SERVER}/koji-clients/${user}/serverca.crt",
+	"url": "https://${KOJI_HUB_NAME}/kojihub",
+	"crt-url": "https://${KOJI_HUB_NAME}/koji-clients/${user}/client.crt",
+	"pem-url": "https://${KOJI_HUB_NAME}/koji-clients/${user}/client.pem",
+	"ca-url": "https://${KOJI_HUB_NAME}/koji-clients/${user}/clientca.crt",
+	"serverca-url": "https://${KOJI_HUB_NAME}/koji-clients/${user}/serverca.crt",
 	"crt": "${client}/client.crt",
 	"pem": "${client}/client.pem",
 	"ca": "${client}/clientca.crt",

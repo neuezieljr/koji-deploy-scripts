@@ -1,0 +1,26 @@
+# GENERAL setting
+KOJI_SETUP_DIR=$(pwd)
+KOJI_SETUP_HUB_DIR=$KOJI_SETUP_DIR/hub
+KOJI_SETUP_WEB_DIR=$KOJI_SETUP_DIR/web
+KOJI_SETUP_BUILDER_DIR=$KOJI_SETUP_DIR/builder
+
+# HUB SERVER
+KOJI_HUB_NAME="$(hostname -s).local"
+KOJI_DIR=/mnt/koji
+
+# WEB SERVER
+KOJI_WEB_NAME="$(hostname -s).local"
+
+# BUILDER
+KOJI_BUILDER_NAME="$(hostname -s).local"
+KOJI_BUILDER_CA='kojibuilder.crt'
+KOJI_SERVER_CA='serverca.crt'
+
+
+# ROLES
+KOJI_USERS=kojiadmin:Admin,kojiweb:Admin,kojibuilder:Builder
+
+# MISC setting
+OS=$( . /etc/os-release && echo $ID)
+INSTALLER=$([ -f /usr/bin/dnf ] && echo /usr/bin/dnf || echo /usr/bin/yum)
+SELINUX=$(sestatus  | awk -F: /SEL.*status/'{print $2}'| tr -d [[:space:]])
