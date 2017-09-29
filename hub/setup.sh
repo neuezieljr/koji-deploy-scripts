@@ -122,8 +122,8 @@ setup_hub_config()
     mkdir -p /etc/koji-hub/backup
     mv /etc/koji-hub/hub.conf /etc/koji-hub/backup/hub.conf
     cat $KOJI_SETUP_HUB_DIR/kojihub.conf | \
-        sed -e 's,#KOJ_HUB_NAME#,'${KOJI_HUB_NAME}',g' \
-            -e 's,#KOJ_WEB_NAME#,'${KOJI_WEB_NAME}',g' \
+        sed -e 's,#KOJI_HUB_NAME#,'${KOJI_HUB_NAME}',g' \
+            -e 's,#KOJI_WEB_NAME#,'${KOJI_WEB_NAME}',g' \
 	    -e 's,#KOJI_DIR#,'${KOJI_DIR}',g' \
             -e 's,#SSL_PROXY_DN#,'"$(awk /kojiweb/'{print substr($0, index($0,$5))}' /etc/pki/koji/index.txt | sed 's/,/\\,/g')"',' \
         > /etc/koji-hub/hub.conf
