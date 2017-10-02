@@ -20,13 +20,6 @@ init_common()
 
 }
 
-rollback()
-{
-    koji remove-tag ${TAG}-build
-    koji remove-tag ${TAG}
-    koji remove-external-repo ${TAG}-repo
-}
-
 run_centos_test()
 {
     init_common
@@ -70,7 +63,6 @@ run_fedora_test()
          shadow-utils squashfs-tools sssd-client tar unzip \
          util-linux which yum
 
-
     koji add-group-pkg ${TAG}-build livemedia-build \
          bash coreutils glibc-all-langpacks lorax-lmc-novirt \
          selinux-policy-targeted shadow-utils util-linux
@@ -79,6 +71,7 @@ run_fedora_test()
          appliance-tools bash coreutils grub parted perl policycoreutils \
          selinux-policy shadow-utils sssd-client
 
+    koji edit-tag ${TAG} -x mock.package_manager=dnf
     koji regen-repo ${TAG}-build
 }
 
