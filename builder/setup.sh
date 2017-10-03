@@ -6,6 +6,9 @@ install_package()
     $INSTALLER install -y mock \
                           rpm-build \
                           createrepo \
+                          livecd-tools \
+                          python-kickstart \
+                          pycdio \
                           koji-builder
 }
 
