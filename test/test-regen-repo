@@ -1,7 +1,6 @@
 #!/bin/sh
 DISTRO=$(. /etc/os-release ; echo $ID)
 RELEASE=$(. /etc/os-release; echo $VERSION_ID)
-TAG=${DISTRO}-${RELEASE}
 
 init_common()
 {
@@ -71,6 +70,7 @@ run_fedora_test()
          appliance-tools bash coreutils grub parted perl policycoreutils \
          selinux-policy shadow-utils sssd-client
 
+    koji edit-tag ${TAG} -x mock.new_chroot=0
     koji edit-tag ${TAG} -x mock.package_manager=dnf
     koji regen-repo ${TAG}-build
 }
@@ -84,6 +84,8 @@ while [ $1 ]; do
 done
 
 set -euo pipefail
+
+TAG=${DISTRO}${RELEASE}
 
 [ "x$DISTRO" = "xfedora" ] && run_fedora_test
 [ "x$DISTRO" = "xcentos" ] && run_centos_test
