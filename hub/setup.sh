@@ -8,16 +8,17 @@ install_package()
 {
     # Server side packages installation
     $INSTALLER install -y httpd \
-	                  mod_ssl \
-			  mod_wsgi \
-	                  postgresql-server
+                          mod_ssl \
+                          mod_wsgi \
+                          postgresql-server
 
     $INSTALLER install -y koji-hub \
-	                  koji-web
+                          koji-web
 }
 
 create_certification()
 {
+    SUBJECT="/C=$SSL_COUNTRY/ST=$SSL_STATE/L=$SSL_LOCATION/O=$SSL_ORG/OU=$SSL_ORG_UNIT/CN=$KOJI_HUB_NAME"
     mkdir -p /etc/pki/koji/{certs,private,confs}
     touch /etc/pki/koji/index.txt
     echo 01 > /etc/pki/koji/serial
@@ -28,7 +29,7 @@ create_certification()
 
     openssl genrsa -out private/koji_ca_cert.key 2048
     openssl req -new -x509 \
-                -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=$KOJI_HUB_NAME" \
+                -subj "$SUBJECT" \
                 -days 3650 -key private/koji_ca_cert.key -out koji_ca_cert.crt -extensions v3_ca \
 		-config <(cat koji-ssl.cnf | \
 		    sed "s/email:move/DNS.1:localhost,DNS.2:$KOJI_HUB_NAME,DNS.3:$KOJI_WEB_NAME,email:move/g")

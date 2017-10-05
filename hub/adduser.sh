@@ -11,6 +11,7 @@ user=$1
 kind=$2
 password=$user
 conf=confs/${user}-ssl.cnf
+subject="/C=$SSL_COUNTRY/ST=$SSL_STATE/L=$SSL_LOCATION/O=$SSL_ORG/OU=$SSL_ORG_UNIT/CN=${user}/emailAddress=${user}@${KOJI_HUB_NAME}"
 
 if [ "x$kind" == "xBuilder" ]; then
     echo "Add Builder $user"
@@ -34,7 +35,7 @@ openssl genrsa -out private/${user}.key 2048
 cp koji-ssl.cnf $conf
 
 openssl req -config $conf -new -nodes -out certs/${user}.csr -key private/${user}.key \
-        -subj "/C=US/ST=Massachusetts/L=Westford/O=RedHat, Inc./OU=PNT/CN=${user}/emailAddress=${user}@${KOJI_HUB_NAME}"
+        -subj "$subject"
 
 openssl ca -config $conf -batch -keyfile private/${caname}_ca_cert.key -cert ${caname}_ca_cert.crt \
         -out certs/${user}-crtonly.crt -outdir certs -infiles certs/${user}.csr
