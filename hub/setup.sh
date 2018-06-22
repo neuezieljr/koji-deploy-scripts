@@ -8,12 +8,26 @@ install_package()
 {
     # Server side packages installation
     $INSTALLER install -y httpd \
+                          openssl \
                           mod_ssl \
                           mod_wsgi \
+                          mod_auth_gssapi \
                           postgresql-server
 
-    $INSTALLER install -y koji-hub \
+    $INSTALLER install -y koji \
+                          koji-hub \
                           koji-web
+}
+
+run_service()
+{
+    if [ -f /usr/bin/systemctl ]; then
+        systemctl enable $1
+        systemctl stop $1 || true
+        systemctl start $1
+    else
+        service $1 start
+    fi
 }
 
 create_certification()
@@ -54,8 +68,7 @@ setup_database()
 {
     # Initial DB
     su - postgres -c "PGDATA=/var/lib/pgsql/data initdb"
-    systemctl enable postgresql
-    systemctl start postgresql
+    run_service postgresql
 
     useradd -G postgres -u 2000 -M -N -d /var/run -s /bin/bash koji
     su - postgres -c "createuser --no-superuser --no-createrole --no-createdb koji"
@@ -86,8 +99,7 @@ setup_server()
 	chcon -R -t public_content_rw_t $KOJI_DIR
     fi
 
-    systemctl enable httpd
-    systemctl restart httpd
+    run_service httpd
 }
 
 setup_http_config()
