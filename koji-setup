@@ -26,6 +26,6 @@ KOJI_SERVER_CA='serverca.crt'
 KOJI_USERS=kojiadmin:Admin,kojiweb:Admin,kojibuilder:Builder
 
 # MISC setting
-OS=$( . /etc/os-release && echo $ID)
+OS=$([ -f /etc/os-release ] && (. /etc/os-release && echo $ID) || echo $(cat /etc/system-release-cpe | awk -F: '{print $3}'))
 INSTALLER=$([ -f /usr/bin/dnf ] && echo /usr/bin/dnf || echo /usr/bin/yum)
 SELINUX=$(sestatus  | awk -F: /SEL.*status/'{print $2}'| tr -d [[:space:]])
